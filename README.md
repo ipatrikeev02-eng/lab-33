@@ -44,114 +44,239 @@
 
 ### 2. Программа
 ```java
-import java.util.*;
-class PoemGit {
-    private String title;
+static class PoemGit {
+    private String nazvanie;
     private String author;
-    private int maxVersion;
-    private List<String> lines;
-    private List<List<String>> history;
-    public PoemGit(String title, String author, int maxVersion) {
-        this.title = title;
-        this.author = author;
-        this.maxVersion = maxVersion;
-        this.lines = new ArrayList<>();
-        this.history = new ArrayList<>();
-        history.add(new ArrayList<>(lines));
+    private int maxVer;
+    private String[] curVer;
+    private int verCount;
+    private String[][] verHistory;
+    private int curVerIndex;
 
-    } @Override
+    public PoemGit(String nazvanie, String author, int maxVer) {
+        this.nazvanie = nazvanie;
+        this.author = author;
+        this.maxVer = maxVer;
+        this.curVer = new String[0];
+        this.verCount = 0;
+        this.verHistory = new String[maxVer][];
+        this.curVerIndex = 0;
+    }
+
+    @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("«").append(title).append(" - ").append(author).append("»\n");
-        for (String line : lines) {
-            sb.append(line).append("\n");
+        StringBuilder s = new StringBuilder();
+        s.append(nazvanie).append(" - ").append(author).append("\n");
+        for (int i = 0; i < curVer.length; i++) {
+            s.append(i + 1).append(". ").append(curVer[i]).append("\n");
         }
-        return sb.toString();
+        return s.toString();
     }
 
     public void addLine(String line) {
-        lines.add(line);
-    }
-
-    public void deleteLine(int lineNumber) {
-        if (lineNumber >= 1 && lineNumber <= lines.size()) {
-            lines.remove(lineNumber - 1); // индексация с 0
+        String[] newLine = new String[curVer.length + 1];
+        for (int i = 0; i < curVer.length; i++) {
+            newLine[i] = curVer[i];
         }
+        newLine[curVer.length] = line;
+        curVer = newLine;
     }
 
-    public void insertLine(int lineNumber, String line) {
-        if (lineNumber >= 1 && lineNumber <= lines.size() + 1) {
-            lines.add(lineNumber - 1, line);
+    public void deleteLine(int num) {
+        if (num < 1 || num > curVer.length) {
+            return;
         }
-    }
-
-    public void saveVersion() {
-        List<String> currentCopy = new ArrayList<>(lines);
-        history.add(0, currentCopy);
-        if (history.size() > maxVersion + 1) {
-            history.remove(history.size() - 1);
-        }
-    }
-
-    public String viewVersion(int versionIndex) {
-        if (versionIndex >= 0 && versionIndex < history.size()) {
-            List<String> versionLines = history.get(versionIndex);
-            StringBuilder sb = new StringBuilder();
-            sb.append("«").append(title).append(" - ").append(author).append("» (Версия ").append(versionIndex).append(")\n");
-            for (String line : versionLines) {
-                sb.append(line).append("\n");
+        String[] newLine = new String[curVer.length - 1];
+        int newIndex = 0;
+        for (int i = 0; i < curVer.length; i++) {
+            if (i != num - 1) {
+                newLine[newIndex++] = curVer[i];
             }
-            return sb.toString();
+        }
+        curVer = newLine;
+    }
+
+    public void insertLine(int num, String line) {
+        if (num < 1 || num > curVer.length + 1) {
+            return;
+        }
+        String[] newLine = new String[curVer.length + 1];
+        int newIndex = 0;
+        for (int i = 0; i < curVer.length; i++) {
+            if (i == num - 1) {
+                newLine[newIndex++] = line;
+            }
+            newLine[newIndex++] = curVer[i];
+        }
+        if (num == curVer.length + 1) {
+            newLine[newIndex] = line;
+        }
+        curVer = newLine;
+    }
+
+    public void saveVer() {
+        String[] copy = new String[curVer.length];
+        for (int i = 0; i < curVer.length; i++) {
+            copy[i] = curVer[i];
+        }
+        if (verCount < maxVer) {
+            verHistory[verCount] = copy;
+            verCount++;
         } else {
-            return "Ошибка: Неверный индекс версии.";
+            for (int i = 0; i < maxVer - 1; i++) {
+                verHistory[i] = verHistory[i + 1];
+            }
+            verHistory[maxVer - 1] = copy;
+        }
+        curVerIndex = 0;
+    }
+
+    public void showSavedVersions() {
+        if (verCount == 0) {
+            System.out.println("Нет сохраненных версий");
+            return;
+        }
+        System.out.println("Сохраненные версии:");
+        for (int i = 0; i < verCount; i++) {
+            System.out.println((i + 1) + ". ");
+            String[] line = verHistory[i];
+            for (int j = 0; j < line.length; j++) {
+                System.out.println("   " + (j + 1) + "." + line[j]);
+            }
         }
     }
 
-    public void deleteSavedVersion(int versionIndex) {
-        if (versionIndex > 0 && versionIndex < history.size()) {
-            history.remove(versionIndex);
+    public void deleteSavedVersion(int num) {
+        if (num < 1 || num > verCount) {
+            return;
+        }
+        for (int i = num - 1; i < verCount - 1; i++) {
+            verHistory[i] = verHistory[i + 1];
+        }
+        verHistory[verCount - 1] = null;
+        verCount--;
+    }
+
+    public void revertToVersion(int num) {
+        if (num < 1 || num > verCount) {
+            return;
+        }
+        String[] w = verHistory[num - 1];
+        curVer = new String[w.length];
+        for (int i = 0; i < w.length; i++) {
+            curVer[i] = w[i];
+        }
+        for (int i = num - 1; i < verCount - 1; i++) {
+            verHistory[i] = verHistory[i + 1];
+        }
+        verHistory[verCount - 1] = null;
+        verCount = num - 1;
+    }
+
+    private String[] getVersion(int ver) {
+        if (ver == 0) {
+            return curVer;
+        } else if (ver >= 1 && ver <= verCount) {
+            return verHistory[ver - 1];
+        }
+        return null;
+    }
+
+    private void printLine(String[] line) {
+        for (int i = 0; i < line.length; i++) {
+            System.out.println((i + 1) + ". " + line[i]);
         }
     }
 
-    public void revertToVersion(int versionIndex) {
-        if (versionIndex >= 0 && versionIndex < history.size()) {
-            lines.clear();
-            lines.addAll(history.get(versionIndex));
-            history = history.subList(0, versionIndex + 1);
+    public void compareVersions(int ver1, int ver2) {
+        String[] v1 = getVersion(ver1);
+        String[] v2 = getVersion(ver2);
+        if (v1 == null || v2 == null) {
+            System.out.println("Ошибка");
+            return;
+        }
+        System.out.println("Сравнение версий:");
+        System.out.println("Версия" + ver1 + ":");
+        printLine(v1);
+        System.out.println("Версия" + ver2 + ":");
+        printLine(v2);
+    }
+
+    private boolean containsLine(String[] w, String v) {
+        for (int i = 0; i < w.length; i++) {
+            if (w[i].equals(v)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void showCommonLines(int ver1, int ver2) {
+        String[] v1 = getVersion(ver1);
+        String[] v2 = getVersion(ver2);
+        if (v1 == null || v2 == null) {
+            System.out.println("Ошибка");
+            return;
+        }
+        String[] newLine;
+        String[] oldLine;
+        if (ver1 > ver2) {
+            newLine = v1;
+            oldLine = v2;
+        } else {
+            newLine = v2;
+            oldLine = v1;
+        }
+        System.out.println("Общие строки:");
+        for (int i = 0; i < newLine.length; i++) {
+            String curLine = newLine[i];
+            boolean found = false;
+            for (int j = 0; j < oldLine.length; j++) {
+                if (oldLine[j].equals(curLine)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                System.out.println(curLine);
+            }
         }
     }
 
-    public String compareVersions(int versionIndex1, int versionIndex2) {
-        if (versionIndex1 < 0 || versionIndex1 >= history.size() ||
-                versionIndex2 < 0 || versionIndex2 >= history.size()) {
-            return "Ошибка: Неверный индекс версии.";
+    public void showDifferentLines(int v1, int v2) {
+        String[] l1 = getVersion(v1);
+        String[] l2 = getVersion(v2);
+        if (l1 == null || l2 == null) {
+            System.out.println("Ошибка");
+            return;
         }
-        List<String> ver1 = history.get(versionIndex1);
-        List<String> ver2 = history.get(versionIndex2);
-        StringBuilder result = new StringBuilder();
-        result.append("=== Общие строки между версиями ===\n");
-        for (String line : ver1) {
-            if (ver2.contains(line)) {
-                result.append(line).append("\n");
+        System.out.println("Строки, которые есть только в одной версии:");
+        for (int i = 0; i < l1.length; i++) {
+            String line = l1[i];
+            boolean w = false;
+            for (int j = 0; j < l2.length; j++) {
+                if (l2[j].equals(line)) {
+                    w = true;
+                    break;
+                }
+            }
+            if (!w) {
+                System.out.println("- " + line);
             }
         }
-        result.append("\n=== Различные строки между версиями ===\n");
-        result.append("Строки из версии ").append(versionIndex1).append(", которых нет в версии ").append(versionIndex2).append(":\n");
-        for (String line : ver1) {
-            if (!ver2.contains(line)) {
-                result.append("<- ").append(line).append("\n");
+        for (int i = 0; i < l2.length; i++) {
+            String line = l2[i];
+            boolean w = false;
+            for (int j = 0; j < l1.length; j++) {
+                if (l1[j].equals(line)) {
+                    w = true;
+                    break;
+                }
+            }
+            if (!w) {
+                System.out.println("+ " + line);
             }
         }
-        result.append("Строки из версии ").append(versionIndex2).append(", которых нет в версии ").append(versionIndex1).append(":\n");
-        for (String line : ver2) {
-            if (!ver1.contains(line)) {
-                result.append("-> ").append(line).append("\n");
-            }
-        }
-        return result.toString();
-    }
-    public String compareVersions(int versionIndex) {
-        return compareVersions(versionIndex, 0);
     }
 }
 ```
