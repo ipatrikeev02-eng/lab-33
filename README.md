@@ -51,7 +51,6 @@ static class PoemGit {
     private String[] curVer;
     private int verCount;
     private String[][] verHistory;
-    private int curVerIndex;
 
     public PoemGit(String nazvanie, String author, int maxVer) {
         this.nazvanie = nazvanie;
@@ -60,7 +59,7 @@ static class PoemGit {
         this.curVer = new String[0];
         this.verCount = 0;
         this.verHistory = new String[maxVer][];
-        this.curVerIndex = 0;
+
     }
 
     @Override
@@ -128,7 +127,6 @@ static class PoemGit {
             }
             verHistory[maxVer - 1] = copy;
         }
-        curVerIndex = 0;
     }
 
     public void showSavedVersions() {
